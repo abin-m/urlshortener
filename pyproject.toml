@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Abin M" }]
 dependencies = [
     "fastapi>=0.110",
-    "uvicorn[standard]>=0.29",
+    "uvicorn[standard]>=0.49.0",
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
     "sqlalchemy>=2.0",
