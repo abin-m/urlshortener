@@ -13,6 +13,10 @@ authors = [{ name = "Abin M" }]
 dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
 ]
 
 [project.optional-dependencies]
