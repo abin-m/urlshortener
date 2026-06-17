@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 import pytest
-
 from fastapi.testclient import TestClient
+
 from urlshortener.app import create_app
 from urlshortener.config import Settings
 from urlshortener.storage import CodeExistsError, LinkNotFoundError
@@ -91,3 +91,33 @@ def test_settings_read_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
             monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("URLSHORTENER_PORT", "9999")
     assert Settings().port == 9999
+
+
+# --- CLI tests ---
+
+def test_cli_serve_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("URLSHORTENER_HOST", raising=False)
+    monkeypatch.delenv("URLSHORTENER_PORT", raising=False)
+    from urlshortener.__main__ import _build_parser
+    args = _build_parser().parse_args(["serve"])
+    assert args.host == "127.0.0.1"
+    assert args.port == 8000
+
+
+def test_cli_serve_flags_override_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("URLSHORTENER_HOST", raising=False)
+    monkeypatch.delenv("URLSHORTENER_PORT", raising=False)
+    from urlshortener.__main__ import _build_parser
+    args = _build_parser().parse_args(
+        ["serve", "--host", "0.0.0.0", "--port", "9000"])
+    assert args.host == "0.0.0.0"
+    assert args.port == 9000
+
+
+def test_cli_serve_env_as_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("URLSHORTENER_HOST", "0.0.0.0")
+    monkeypatch.setenv("URLSHORTENER_PORT", "9000")
+    from urlshortener.__main__ import _build_parser
+    args = _build_parser().parse_args(["serve"])
+    assert args.host == "0.0.0.0"
+    assert args.port == 9000
