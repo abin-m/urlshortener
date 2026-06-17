@@ -21,6 +21,8 @@ jobs:
             toxenv: py312
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/cache@v5
         with:
           path: ~/.cache/pip
@@ -35,6 +37,8 @@ jobs:
       image: python:3.12-slim
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/cache@v5
         with:
           path: ~/.cache/pip
