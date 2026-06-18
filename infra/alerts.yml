@@ -1,0 +1,47 @@
+groups:
+  - name: urlshortener
+    rules:
+      - alert: ServiceDown
+        expr: up{job="urlshortener"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "URL shortener is unreachable"
+          description: "Prometheus cannot scrape the app."
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(urlshortener_http_requests_total{status_code=~"5.."}[1m])
+            /
+            rate(urlshortener_http_requests_total[1m])
+          ) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate"
+          description: "5xx rate is {{ $value | humanizePercentage }} over the last 1m."
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            rate(urlshortener_http_request_duration_seconds_bucket[1m])
+          ) > 1.0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 request latency"
+          description: "p95 latency is {{ $value | humanizeDuration }}."
+
+      - alert: NoLinksCreated
+        expr: rate(urlshortener_links_created_total[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No new links created in 5 minutes"
+          description: "Could indicate an issue with the /shorten endpoint."
