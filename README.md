@@ -7,7 +7,8 @@ Self-hosted URL shortener. Shorten URLs, redirect, track visits.
 **Docker Compose (recommended)**
 
 ```bash
-cp .env.example .env   # set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+# create an .env file by following the configs docs  
+# set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 docker compose up -d
 ```
 
