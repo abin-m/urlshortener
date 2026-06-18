@@ -10,7 +10,5 @@ dist/
 htmlcov/
 .venv/
 venv/
-.env
-.env.*
 .DS_Store
 .tox/
