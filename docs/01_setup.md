@@ -5,7 +5,7 @@
 - Python 3.11+
 - PostgreSQL 16 (or Docker)
 
-## Local (no Docker)
+## Local 
 
 ```bash
 pip install -e .
@@ -19,8 +19,7 @@ urlshortener serve
 ## Docker Compose (recommended)
 
 ```bash
-cp .env.example .env   # fill in POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
-
+# Create an .env file by following the configs docs
 docker compose up -d
 ```
 
