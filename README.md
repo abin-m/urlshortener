@@ -1,85 +1,89 @@
 # urlshortener
 
-A self-hosted URL shortener. Shorten a URL, get a redirect, track visit counts. That's it.
+Self-hosted URL shortener. Shorten URLs, redirect, track visits. 
 
+## Quickstart
 
-
-## API
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/shorten` | Create a short link |
-| `GET` | `/{code}` | Redirect to original URL (307) |
-| `GET` | `/stats/{code}` | Visit count + original URL |
-| `GET` | `/healthz` | Liveness + DB connectivity check |
+**Docker Compose (recommended)**
 
 ```bash
-# shorten
-curl -X POST http://localhost:8000/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/some/long/path"}'
-# {"code": "aB3kR7z", "short_url": "http://localhost:8000/aB3kR7z"}
-
-# stats
-curl http://localhost:8000/stats/aB3kR7z
-# {"code": "aB3kR7z", "url": "https://example.com/some/long/path", "visits": 4}
+cp .env.example .env   # set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+docker compose up -d
 ```
 
----
-
-## Running locally
-
-**Prerequisites:** Python 3.11, a running PostgreSQL instance.
+**Local**
 
 ```bash
 pip install -e .
-
-# point at your DB (or rely on the default below)
 export URLSHORTENER_DATABASE_URL="postgresql+psycopg://user:pass@localhost:5432/urlshortener"
-
 urlshortener serve
-# listening on http://127.0.0.1:8000
 ```
+
+App runs at `http://localhost:8000`.
 
 ---
 
-## Docker Compose
+## API
 
-Spins up Postgres + app together:
+| Method | Path            | Description                  |
+|--------|-----------------|------------------------------|
+| POST   | `/shorten`      | Create short link            |
+| GET    | `/{code}`       | Redirect to original (307)   |
+| GET    | `/stats/{code}` | Visit count + original URL   |
+| GET    | `/healthz`      | Liveness + DB check          |
+| GET    | `/metrics`      | Prometheus metrics           |
 
 ```bash
-docker compose up -d 
+curl -X POST http://localhost:8000/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/long/path"}'
+# {"code": "aB3kR7z", "short_url": "http://localhost:8000/aB3kR7z"}
+
+curl http://localhost:8000/stats/aB3kR7z
+# {"code": "aB3kR7z", "url": "https://example.com/long/path", "visits": 4}
 ```
 
-
 ---
 
-## Configuration
 
-All settings are environment variables with the `URLSHORTENER_` prefix.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `URLSHORTENER_DATABASE_URL` | `postgresql+psycopg://urlshortener:urlshortener@localhost:5432/urlshortener` | SQLAlchemy connection string |
-| `URLSHORTENER_BASE_URL` | `http://localhost:8000` | Public base URL used when building short links |
-| `URLSHORTENER_HOST` | `127.0.0.1` | Bind address |
-| `URLSHORTENER_PORT` | `8000` | Bind port |
-| `URLSHORTENER_CODE_LENGTH` | `7` | Length of generated short codes (4–32) |
-| `URLSHORTENER_LOG_LEVEL` | `INFO` | Root log level |
-
----
 
 ## Development
 
 ```bash
 pip install -e ".[test]"
 
-pytest          # runs tests + coverage
-mypy src        # strict type checking
+pytest        # test + coverage
+mypy src      # type check
+tox           # full matrix
 ```
 
-> Tests use an in-memory fake store 
+Tests run against an in-memory fake store — no DB required.
 
+---
+
+## Observability
+
+Docker Compose includes Prometheus, Alertmanager, and Grafana.
+
+| Service      | URL                       |
+|--------------|---------------------------|
+| Grafana      | http://localhost:3000     |
+| Prometheus   | http://localhost:9090     |
+| Alertmanager | http://localhost:9093     |
+
+See [`docs/05_observability.md`](docs/05_observability.md) for details.
+
+---
+
+## Docs
+
+- [`docs/01_setup.md`](docs/01_setup.md)
+- [`docs/02_api.md`](docs/02_api.md)
+- [`docs/03_config.md`](docs/03_config.md)
+- [`docs/04_development.md`](docs/04_development.md)
+- [`docs/05_observability.md`](docs/05_observability.md)
+
+---
 
 ## License
 
