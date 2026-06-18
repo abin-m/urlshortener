@@ -3,21 +3,48 @@ from __future__ import annotations
 import logging
 import secrets
 import string
-from collections.abc import AsyncIterator
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy import Engine, create_engine
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response as StarletteResponse
 
 from .config import Settings
+from .metrics import HTTP_REQUEST_DURATION, HTTP_REQUESTS, LINKS_CREATED, REDIRECTS
 from .storage import CodeExistsError, LinkNotFoundError, LinkStore
 
 logger = logging.getLogger(__name__)
 
 _ALPHABET = string.ascii_letters + string.digits
 _MAX_ATTEMPTS = 5
+
+
+class _MetricsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[StarletteResponse]],
+    ) -> StarletteResponse:
+        if request.url.path == "/metrics":
+            return await call_next(request)
+
+        start = time.perf_counter()
+        response = await call_next(request)
+        duration = time.perf_counter() - start
+
+        route = request.scope.get("route")
+        path = route.path if route else request.url.path
+
+        HTTP_REQUESTS.labels(request.method, path, response.status_code).inc()
+        HTTP_REQUEST_DURATION.labels(request.method, path).observe(duration)
+
+        return response
 
 
 class ShortenRequest(BaseModel):
@@ -51,6 +78,11 @@ def create_app(settings: Settings, store: LinkStore | None = None) -> FastAPI:
         logger.info("Application stopped")
 
     app = FastAPI(title="URL Shortener", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(_MetricsMiddleware)
+
+    @app.get("/metrics", include_in_schema=False)
+    def metrics_endpoint() -> Response:
+        return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -69,6 +101,7 @@ def create_app(settings: Settings, store: LinkStore | None = None) -> FastAPI:
                 store.create(code, str(payload.url))
             except CodeExistsError:
                 continue
+            LINKS_CREATED.inc()
             return LinkResponse(
                 code=code, short_url=f"{settings.base_url.rstrip('/')}/{code}"
             )
@@ -91,6 +124,7 @@ def create_app(settings: Settings, store: LinkStore | None = None) -> FastAPI:
         except LinkNotFoundError as exc:
             raise HTTPException(
                 status_code=404, detail="code not found") from exc
+        REDIRECTS.inc()
         return RedirectResponse(url=url, status_code=307)
 
     return app
