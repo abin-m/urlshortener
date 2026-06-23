@@ -2,6 +2,8 @@
 
 Self-hosted URL shortener. Shorten URLs, redirect, track visits. 
 
+[![CI](https://github.com/abin-m/urlshortener/actions/workflows/ci.yml/badge.svg)](https://github.com/abin-m/urlshortener/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/bh-urlshortener?logo=pypi)](https://pypi.org/project/bh-urlshortener/) 
 ## Quickstart
 
 **Docker Compose (recommended)**
